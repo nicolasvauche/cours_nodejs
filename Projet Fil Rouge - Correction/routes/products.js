@@ -217,6 +217,15 @@ router.put('/:id', productsController.updateProduct)
  *     responses:
  *       200:
  *         description: Product successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               example:
+ *                 message: "Product successfully deleted"
  *       404:
  *         description: Product not found
  *         content:

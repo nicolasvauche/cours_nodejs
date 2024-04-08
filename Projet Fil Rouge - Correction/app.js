@@ -9,6 +9,7 @@ const app = express()
 
 const defaultRoutes = require('./routes/default')
 const productsRoutes = require('./routes/products')
+const authRoutes = require('./routes/auth')
 
 app.use(express.static('public'))
 app.use(bodyParser.json())
@@ -18,6 +19,7 @@ app.use(helmet())
 
 app.use('/api', defaultRoutes)
 app.use('/api/products', productsRoutes)
+app.use('/api', authRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 module.exports = app
