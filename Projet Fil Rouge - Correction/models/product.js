@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize')
 const { sequelize } = require('../services/db')
+const User = require('./user')
 
 const Product = sequelize.define(
   'Product',
@@ -26,6 +27,15 @@ const Product = sequelize.define(
           msg: "The product status must be 'En vente' or 'Invendu'"
         }
       }
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id'
+      },
+      field: 'user_id'
     }
   },
   {
@@ -35,5 +45,8 @@ const Product = sequelize.define(
     updatedAt: 'updated_at'
   }
 )
+
+User.hasMany(Product, { foreignKey: 'userId' })
+Product.belongsTo(User, { foreignKey: 'userId' })
 
 module.exports = Product

@@ -11,7 +11,7 @@ const authController = require('../controllers/authController')
 
 /**
  * @openapi
- * /api/login:
+ * /login:
  *   post:
  *     summary: Authenticates a user and returns a JWT token
  *     tags: [Authentication]

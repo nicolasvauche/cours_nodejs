@@ -1,4 +1,5 @@
 const Product = require('../models/product')
+const User = require('../models/user')
 
 exports.getAllProducts = async (req, res) => {
   try {
@@ -22,9 +23,29 @@ exports.getProductById = async (req, res) => {
   }
 }
 
-exports.createProduct = async (req, res) => {
+exports.getProductsByUserId = async (req, res) => {
   try {
-    const product = await Product.create(req.body)
+    const user = await User.findByPk(req.params.userId)
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const products = await Product.findAll({
+      where: { userId: req.params.userId }
+    })
+
+    return res.json(products)
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
+  }
+}
+
+exports.createProduct = async (req, res) => {
+  const newProduct = req.body
+  newProduct.userId = req.userInfos.userId
+
+  try {
+    const product = await Product.create(newProduct)
     res.status(201).json(product)
   } catch (error) {
     res.status(500).json({ error: error.message })
