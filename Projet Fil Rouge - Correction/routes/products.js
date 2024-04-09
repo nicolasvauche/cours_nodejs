@@ -320,4 +320,67 @@ router.delete(
   productsController.deleteProduct
 )
 
+/**
+ * @openapi
+ * /products/user/status:
+ *   put:
+ *     summary: Updates the status to "Invendu" and applies a specified discount to the price of products for the connected user
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reductionRate:
+ *                 type: number
+ *                 description: The percentage rate of the discount to be applied to the product's price. Must be a positive number less than 100.
+ *                 example: 25
+ *             required:
+ *               - reductionRate
+ *     description: |
+ *       Updates the status to "Invendu" and applies a discount based on the specified rate to the price of all products owned by the connected user that meet the following criteria:
+ *       - The product's creation date is at least 4 hours ago.
+ *       - The current status of the product is "En vente".
+ *       The reductionRate must be provided in the request body.
+ *     responses:
+ *       200:
+ *         description: Products status and price successfully updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *               example:
+ *                 message: "[n] Product(s) status and price successfully updated"
+ *       404:
+ *         description: No products found to update
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *               example:
+ *                 error: "No product to update"
+ *       500:
+ *         description: Error message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *               example:
+ *                 error: "Internal Server Error"
+ */
+router.put('/user/status', auth, productsController.updateProductsStatus)
+
 module.exports = router
