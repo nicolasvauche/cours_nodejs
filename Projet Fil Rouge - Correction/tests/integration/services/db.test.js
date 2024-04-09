@@ -1,4 +1,4 @@
-const { connectDB, sequelize } = require('../../services/db')
+const { connectDB, sequelize } = require('../../../services/db')
 
 describe('Database Connection', () => {
   test('should connect without error', async () => {

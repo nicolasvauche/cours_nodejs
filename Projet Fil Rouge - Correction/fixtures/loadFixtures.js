@@ -31,8 +31,14 @@ async function loadFixtures () {
   } catch (error) {
     console.error('Failed to load fixtures:', error)
   } finally {
-    process.exit()
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit()
+    }
   }
 }
 
-loadFixtures()
+if (process.env.NODE_ENV !== 'test') {
+  loadFixtures()
+}
+
+module.exports = { loadFixtures }

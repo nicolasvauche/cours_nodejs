@@ -4,3 +4,9 @@ exports.index = (req, res) => {
     documentation: '/api-docs'
   })
 }
+
+exports.protected = (req, res) => {
+  res.json({
+    message: 'This endpoint is protected!'
+  })
+}

@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const defaultController = require('../controllers/defaultController')
+const auth = require('../middlewares/auth')
 
 /**
  * @openapi
@@ -32,5 +33,7 @@ const defaultController = require('../controllers/defaultController')
  *                    example: /api-docs
  */
 router.get('/', defaultController.index)
+
+router.get('/protected', auth, defaultController.protected)
 
 module.exports = router
