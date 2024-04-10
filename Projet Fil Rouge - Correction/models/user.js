@@ -1,35 +1,27 @@
-const { DataTypes } = require('sequelize')
-const { sequelize } = require('../services/db')
+const mongoose = require('mongoose')
+const validator = require('validator')
 
-const User = sequelize.define(
-  'User',
+const userSchema = new mongoose.Schema(
   {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
-    },
     email: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
       unique: true,
-      validate: {
-        isEmail: true
-      }
+      validate: [validator.isEmail, 'Please fill a valid email address']
     },
     password: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: String,
+      required: true
     },
     bakeryName: {
-      type: DataTypes.STRING,
-      field: 'bakery_name'
+      type: String,
+      required: false
     }
   },
   {
-    tableName: 'users',
-    timestamps: false
+    timestamps: false,
+    versionKey: false
   }
 )
 
-module.exports = User
+module.exports = mongoose.model('User', userSchema)

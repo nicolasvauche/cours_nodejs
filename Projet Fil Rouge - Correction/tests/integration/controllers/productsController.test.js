@@ -1,27 +1,42 @@
 const request = require('supertest')
 const app = require('../../../app')
-const { loadFixtures } = require('../../../fixtures/loadFixtures')
-const { sequelize } = require('../../../services/db')
+const Product = require('../../../models/product')
+const User = require('../../../models/user')
+const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
 
 let token
-const productId = 1
-const userId = 1
-const nonExistentUserId = 9999
+const productId = mongoose.Types.ObjectId()
+const userId = mongoose.Types.ObjectId()
+const nonExistentUserId = mongoose.Types.ObjectId()
 const userPayload = {
-  userId: 1,
+  userId: userId,
   email: 'bob@bakeapi.com',
   bakeryName: 'Ma petite boulangerie'
 }
 
 beforeAll(async () => {
-  await sequelize.sync({ force: true })
-  await loadFixtures()
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  await Product.deleteMany({})
+  await User.deleteMany({})
+  const user = new User(userPayload)
+  await user.save()
+  const product = new Product({
+    _id: productId,
+    name: 'Test Product',
+    price: 20.0,
+    status: 'En vente',
+    userId: user._id
+  })
+  await product.save()
   token = jwt.sign(userPayload, process.env.JWT_SECRET)
 })
 
 afterAll(async () => {
-  await sequelize.close()
+  await mongoose.disconnect()
 })
 
 describe('Products Controller Integration Tests', () => {
@@ -37,7 +52,7 @@ describe('Products Controller Integration Tests', () => {
     it('should return a product if it exists', async () => {
       const res = await request(app).get(`/api/products/${productId}`)
       expect(res.statusCode).toEqual(200)
-      expect(res.body).toHaveProperty('id', productId)
+      expect(res.body).toHaveProperty('_id', productId.toString())
     })
 
     it('should return 404 if the product does not exist', async () => {
@@ -73,7 +88,7 @@ describe('Products Controller Integration Tests', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(newProduct)
       expect(res.statusCode).toEqual(201)
-      expect(res.body).toHaveProperty('id')
+      expect(res.body).toHaveProperty('_id')
     })
   })
 

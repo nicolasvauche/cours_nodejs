@@ -1,52 +1,30 @@
-const { DataTypes } = require('sequelize')
-const { sequelize } = require('../services/db')
-const User = require('./user')
+const mongoose = require('mongoose')
 
-const Product = sequelize.define(
-  'Product',
+const productSchema = new mongoose.Schema(
   {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
-    },
     name: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: String,
+      required: true
     },
     price: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
+      type: mongoose.Types.Decimal128,
+      required: true
     },
     status: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isIn: {
-          args: [['En vente', 'Invendu']],
-          msg: "The product status must be 'En vente' or 'Invendu'"
-        }
-      }
+      type: String,
+      required: true,
+      enum: ['En vente', 'Invendu']
     },
     userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id'
-      },
-      field: 'user_id'
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
     }
   },
   {
-    tableName: 'products',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    versionKey: false
   }
 )
 
-User.hasMany(Product, { foreignKey: 'userId' })
-Product.belongsTo(User, { foreignKey: 'userId' })
-
-module.exports = Product
+module.exports = mongoose.model('Product', productSchema)

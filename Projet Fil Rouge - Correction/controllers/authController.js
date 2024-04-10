@@ -6,7 +6,7 @@ exports.login = async (req, res) => {
   const { email, password } = req.body
 
   try {
-    const user = await User.findOne({ where: { email } })
+    const user = await User.findOne({ email: email })
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
@@ -19,7 +19,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, bakeryName: user.bakeryName },
+      { userId: user._id, email: user.email, bakeryName: user.bakeryName },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     )

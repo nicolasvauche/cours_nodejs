@@ -1,10 +1,9 @@
 const Product = require('../models/product')
 const User = require('../models/user')
-const { Sequelize } = require('sequelize')
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.findAll()
+    const products = await Product.find({})
     res.json(products)
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -13,7 +12,7 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.id)
+    const product = await Product.findById(req.params.id)
     if (product) {
       res.json(product)
     } else {
@@ -26,15 +25,12 @@ exports.getProductById = async (req, res) => {
 
 exports.getProductsByUserId = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.userId)
-    if (!user) {
+    const userExists = await User.exists({ _id: req.params.userId })
+    if (!userExists) {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    const products = await Product.findAll({
-      where: { userId: req.params.userId }
-    })
-
+    const products = await Product.find({ userId: req.params.userId })
     return res.json(products)
   } catch (error) {
     return res.status(500).json({ error: error.message })
@@ -42,12 +38,13 @@ exports.getProductsByUserId = async (req, res) => {
 }
 
 exports.createProduct = async (req, res) => {
-  const newProduct = req.body
-  newProduct.userId = req.userInfos.userId
+  const newProductData = req.body
+  newProductData.userId = req.userInfos.userId
 
   try {
-    const product = await Product.create(newProduct)
-    res.status(201).json(product)
+    const newProduct = new Product(newProductData)
+    const savedProduct = await newProduct.save()
+    res.status(201).json(savedProduct)
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
@@ -55,11 +52,12 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const [updated] = await Product.update(req.body, {
-      where: { id: req.params.id }
-    })
-    if (updated) {
-      const updatedProduct = await Product.findByPk(req.params.id)
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    )
+    if (updatedProduct) {
       res.status(200).json(updatedProduct)
     } else {
       res.status(404).json({ error: 'Product not found' })
@@ -71,9 +69,7 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const deleted = await Product.destroy({
-      where: { id: req.params.id }
-    })
+    const deleted = await Product.findByIdAndDelete(req.params.id)
     if (deleted) {
       res.status(200).json({ message: 'Product successfully deleted' })
     } else {
@@ -97,24 +93,19 @@ exports.updateProductsStatus = async (req, res) => {
 
     const fourHoursAgo = new Date(new Date() - 4 * 60 * 60 * 1000)
 
-    const productsToUpdate = await Product.findAll({
-      where: {
-        userId: req.userInfos.userId,
-        created_at: {
-          [Sequelize.Op.lte]: fourHoursAgo
-        },
-        status: 'En vente'
-      }
+    const productsToUpdate = await Product.find({
+      userId: req.userInfos.userId,
+      created_at: { $lte: fourHoursAgo },
+      status: 'En vente'
     })
 
     if (productsToUpdate.length > 0) {
-      await Promise.all(
-        productsToUpdate.map(product => {
-          const reducedPrice =
-            product.price - product.price * (reductionRate / 100)
-          return product.update({ price: reducedPrice, status: 'Invendu' })
-        })
-      )
+      const updatePromises = productsToUpdate.map(product => {
+        product.price -= product.price * (reductionRate / 100)
+        product.status = 'Invendu'
+        return product.save()
+      })
+      await Promise.all(updatePromises)
 
       res.status(200).json({
         message: `${productsToUpdate.length} Product(s) status and price successfully updated`
