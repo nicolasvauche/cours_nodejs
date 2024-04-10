@@ -2,37 +2,31 @@ const request = require('supertest')
 const jwt = require('jsonwebtoken')
 const app = require('../../../app')
 const { sequelize } = require('../../../services/db')
-const Product = require('../../../models/product')
-const User = require('../../../models/user')
+const { loadFixtures } = require('../../../fixtures/loadFixtures')
+
+let token
+const otherToken = 'Bad token'
+const productId = 1
+const userPayload = {
+  userId: 1,
+  email: 'bob@bakeapi.com',
+  bakeryName: 'Ma petite boulangerie'
+}
+
+beforeAll(async () => {
+  await sequelize.sync({ force: true })
+  await loadFixtures()
+  token = jwt.sign(userPayload, process.env.JWT_SECRET)
+})
+
+afterAll(async () => {
+  await sequelize.close()
+})
 
 describe('checkProductOwnership Middleware', () => {
-  let user, otherUser, product, token, otherToken
-
-  beforeAll(async () => {
-    await sequelize.sync({ force: true })
-    user = await User.create({
-      email: 'user@example.com',
-      password: 'password',
-      bakeryName: 'User Bakery'
-    })
-    otherUser = await User.create({
-      email: 'other@example.com',
-      password: 'password',
-      bakeryName: 'Other Bakery'
-    })
-    product = await Product.create({
-      name: 'Test Product',
-      price: 10.0,
-      userId: user.id,
-      status: 'En vente'
-    })
-    token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET)
-    otherToken = jwt.sign({ userId: otherUser.id }, process.env.JWT_SECRET)
-  })
-
   it('should deny access if user is not the owner of the product', async () => {
     const res = await request(app)
-      .put(`/api/products/${product.id}`)
+      .put(`/api/products/${productId}`)
       .set('Authorization', `Bearer ${otherToken}`)
       .send({ name: 'Updated Product', price: 15.0, status: 'Invendu' })
     expect(res.statusCode).toEqual(403)
@@ -40,7 +34,7 @@ describe('checkProductOwnership Middleware', () => {
 
   it('should grant access if user is the owner of the product', async () => {
     const res = await request(app)
-      .put(`/api/products/${product.id}`)
+      .put(`/api/products/${productId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Updated Product', price: 15.0, status: 'Invendu' })
     expect(res.statusCode).toEqual(200)
@@ -48,7 +42,7 @@ describe('checkProductOwnership Middleware', () => {
 
   it('should return a 404 if the product was not found', async () => {
     const res = await request(app)
-      .put('/api/products/4')
+      .put('/api/products/9999')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Updated Product', price: 15.0, status: 'Invendu' })
     expect(res.statusCode).toEqual(404)
@@ -57,13 +51,9 @@ describe('checkProductOwnership Middleware', () => {
   it('should return a 500 if the db connection is closed', async () => {
     await sequelize.close()
     const res = await request(app)
-      .put(`/api/products/${product.id}`)
+      .put(`/api/products/${productId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Updated Product', price: 15.0, status: 'Invendu' })
     expect(res.statusCode).toEqual(500)
-  })
-
-  afterAll(async () => {
-    await sequelize.close()
   })
 })

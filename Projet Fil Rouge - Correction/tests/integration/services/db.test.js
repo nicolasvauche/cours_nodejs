@@ -1,5 +1,9 @@
 const { connectDB, sequelize } = require('../../../services/db')
 
+afterAll(async () => {
+  await sequelize.close()
+})
+
 describe('Database Connection', () => {
   test('should connect without error', async () => {
     await expect(connectDB()).resolves.not.toThrow()
@@ -29,8 +33,4 @@ describe('Database Connection', () => {
     consoleSpy.mockRestore()
     process.exit = originalProcessExit
   })
-})
-
-afterAll(async () => {
-  await sequelize.close()
 })
